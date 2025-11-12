@@ -13,7 +13,7 @@ Notification:Notify({
 })
 
 local Window = Fatality.new({
-	Name = "GoroxHook",
+	Name = " GoroxHook",
 	Expire = "never",
 });
 
@@ -42,11 +42,6 @@ local Skins = Window:AddMenu({
 	Icon = "palette"
 })
 
-local Lua = Window:AddMenu({
-	Name = "LUA",
-	Icon = "code"
-})
-
 do
 	local Weapon = Rage:AddSection({
 		Position = 'left',
@@ -68,17 +63,6 @@ do
 		Default = 61
 	})
 	
-	Weapon:AddSlider({
-		Name = "Pointscale",
-		Type = "%",
-		Default = 0
-	})
-	
-	Weapon:AddSlider({
-		Name = "Min-damage",
-		Type = "%",
-		Default = 85
-	})
 	
 	Weapon:AddDropdown({
 		Name = "Hitboxes",
@@ -96,10 +80,6 @@ do
 		Default = "Damage"
 	})
 	
-	local Autostop = Extra:AddToggle({
-		Name = "Autostop",
-		Option = true;
-	});
 	
 	Autostop.Option:AddToggle({
 		Name = "Something"
@@ -125,9 +105,6 @@ do
 		Name = "Ignore limbs on moving",
 	});
 	
-	Extra:AddToggle({
-		Name = "Autorevolver",
-	});
 	
 	General:AddToggle({
 		Name = "Aimbot",
@@ -146,42 +123,7 @@ do
 	})
 	
 	General:AddToggle({
-		Name = "Autofire",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Delay shot",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Duck peek assist",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Force bodyaim",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Force shoot",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Headshot only",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Knife bot",
-		Risky = false
-	})
-	
-	General:AddToggle({
-		Name = "Zeus bot",
+		Name = "TriggerBot",
 		Risky = false
 	})
 	
@@ -206,29 +148,7 @@ do
 	NoSpread.Option:AddToggle({
 		Name = "Something"
 	})
-	
-	local Doubletap = General:AddToggle({
-		Name = "Doubletap",
-		Risky = true,
-		Option = true
-	})
 
-	Doubletap.Option:AddToggle({
-		Name = "Something"
-	})
-
-	Doubletap.Option:AddToggle({
-		Name = "Something"
-	})
-
-	Doubletap.Option:AddToggle({
-		Name = "Something"
-	})
-
-	Doubletap.Option:AddToggle({
-		Name = "Something"
-	})
-	
 	General:AddButton({
 		Name = "Notification",
 		Callback = function()
