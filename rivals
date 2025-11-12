@@ -100,12 +100,34 @@ do
         Default = 10
     })
     
+    -- SAFE MODE TELEPORT ANIMATION
+    local SafeModeToggle = Movement:AddToggle({
+        Name = "Safe Mode Teleport",
+        Risky = false
+    })
+    
+    Movement:AddSlider({
+        Name = "Animation Time Position",
+        Type = " sec",
+        Min = 2.2,
+        Max = 2.5,
+        Default = 2.3
+    })
+    
+    Movement:AddKeybind({
+        Name = "Activate Safe Teleport"
+    })
+    
     -- AIMBOT IMPLEMENTATION
     AimToggle:SetCallback(function(state)
         if state then
-            -- Aimbot logic here
             game:GetService("RunService").RenderStepped:Connect(function()
                 -- Aimbot targeting system
+                local closestPlayer = getClosestPlayer()
+                if closestPlayer then
+                    local targetPart = getAimbotPart()
+                    aimAt(closestPlayer.Character[targetPart])
+                end
             end)
         end
     end)
@@ -113,7 +135,6 @@ do
     -- SILENT AIM IMPLEMENTATION
     SilentToggle:SetCallback(function(state)
         if state then
-            -- Silent aim hook
             local mt = getrawmetatable(game)
             local old = mt.__namecall
             setreadonly(mt, false)
@@ -121,6 +142,10 @@ do
                 local args = {...}
                 if state and getnamecallmethod() == "FindPartOnRayWithIgnoreList" then
                     -- Silent aim manipulation
+                    local silentPart = getSilentAimPart()
+                    if validateTarget() then
+                        args[2] = Ray.new(args[2].Origin, (getTargetPosition(silentPart) - args[2].Origin))
+                    end
                     return old(unpack(args))
                 end
                 return old(...)
@@ -132,9 +157,14 @@ do
     StrafeToggle:SetCallback(function(state)
         if state then
             game:GetService("RunService").Heartbeat:Connect(function()
-                -- Circular strafing around target
-                local root = game.Players.LocalPlayer.Character.HumanoidRootPart
-                root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(5), 0)
+                local target = getClosestPlayer()
+                if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                    local root = game.Players.LocalPlayer.Character.HumanoidRootPart
+                    local angle = tick() * 3
+                    local radius = getStrafeRadius()
+                    local offset = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+                    root.CFrame = CFrame.new(target.Character.HumanoidRootPart.Position + offset)
+                end
             end)
         end
     end)
@@ -142,12 +172,76 @@ do
     -- FAKE POSITION IMPLEMENTATION
     FakePosToggle:SetCallback(function(state)
         if state then
-            -- Fake position network manipulation
             local char = game.Players.LocalPlayer.Character
             local root = char.HumanoidRootPart
-            local fake = root:Clone()
-            fake.Parent = workspace
-            -- Network spoofing logic
+            local fakeRoot = root:Clone()
+            fakeRoot.Parent = workspace
+            fakeRoot.Transparency = 1
+            fakeRoot.Anchored = true
+            
+            game:GetService("RunService").Heartbeat:Connect(function()
+                if state then
+                    -- Network spoofing
+                    local offset = getFakePositionOffset()
+                    fakeRoot.CFrame = root.CFrame + Vector3.new(offset, 0, offset)
+                    spoofNetwork(fakeRoot)
+                end
+            end)
         end
     end)
+    
+    -- SAFE MODE TELEPORT IMPLEMENTATION
+    SafeModeToggle:SetCallback(function(state)
+        if state then
+            local teleportKey = getTeleportKey()
+            game:GetService("UserInputService").InputBegan:Connect(function(input)
+                if input.KeyCode == teleportKey then
+                    local char = game.Players.LocalPlayer.Character
+                    local humanoid = char:FindFirstChild("Humanoid")
+                    
+                    if humanoid then
+                        -- Load and play teleport animation
+                        local teleportAnimation = Instance.new("Animation")
+                        teleportAnimation.AnimationId = "rbxassetid://15609995579"
+                        local animTrack = humanoid:LoadAnimation(teleportAnimation)
+                        
+                        -- Play animation at specific time position
+                        local animTimePos = getAnimationTimePosition()
+                        animTrack:Play()
+                        animTrack:AdjustSpeed(0)
+                        animTrack.TimePosition = animTimePos
+                        
+                        -- Perform teleport after animation delay
+                        spawn(function()
+                            wait(0.1)
+                            local targetPos = calculateSafePosition()
+                            root.CFrame = CFrame.new(targetPos)
+                            animTrack:Stop()
+                        end)
+                    end
+                end
+            end)
+        end
+    end)
+    
+    -- HELPER FUNCTIONS
+    function getClosestPlayer()
+        local closest = nil
+        local maxDist = getAimbotFOV()
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer and player.Character then
+                local dist = (player.Character.Head.Position - game.Players.LocalPlayer.Character.Head.Position).Magnitude
+                if dist < maxDist then
+                    closest = player
+                    maxDist = dist
+                end
+            end
+        end
+        return closest
+    end
+    
+    function calculateSafePosition()
+        local root = game.Players.LocalPlayer.Character.HumanoidRootPart
+        return root.Position + root.CFrame.LookVector * 20
+    end
 end
