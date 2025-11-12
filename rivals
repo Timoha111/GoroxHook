@@ -17,6 +17,15 @@ local Window = Fatality.new({
     Expire = "never",
 })
 
+-- MENU TOGGLE KEYBIND (RSHIFT)
+local menuEnabled = true
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        menuEnabled = not menuEnabled
+        Window:Toggle(menuEnabled)
+    end
+end)
+
 -- COMBAT TAB
 local Combat = Window:AddMenu({
     Name = "COMBAT",
@@ -39,74 +48,102 @@ do
         Name = "MOVEMENT"
     })
     
+    -- VARIABLES
+    local aimbotActive = false
+    local silentAimActive = false
+    local strafeActive = false
+    local fakePosActive = false
+    local safeModeActive = false
+    
     -- AIMBOT FUNCTIONS
     local AimToggle = Aimbot:AddToggle({
-        Name = "Enable Aimbot",
-        Risky = true
+        Name = "Enable Aimbot"
     })
     
-    Aimbot:AddDropdown({
+    local AimbotPartDropdown = Aimbot:AddDropdown({
         Name = "Aimbot Part",
-        Values = {"Head", "Torso", "Random"}
+        Values = {"Head", "UpperTorso", "HumanoidRootPart"},
+        Default = "Head"
     })
     
-    Aimbot:AddSlider({
+    local AimbotFOV = Aimbot:AddSlider({
         Name = "Aimbot FOV",
         Type = "°",
-        Default = 50
+        Default = 50,
+        Min = 1,
+        Max = 360
     })
     
-    Aimbot:AddKeybind({
-        Name = "Aimbot Key"
+    local AimbotKeybind = Aimbot:AddKeybind({
+        Name = "Aimbot Key",
+        Default = Enum.KeyCode.Q
     })
     
     -- SILENT AIM FUNCTIONS
     local SilentToggle = Silent:AddToggle({
-        Name = "Silent Aim",
-        Risky = true
+        Name = "Silent Aim"
     })
     
-    Silent:AddSlider({
+    local SilentHitChance = Silent:AddSlider({
         Name = "Hit Chance",
         Type = "%",
-        Default = 100
+        Default = 100,
+        Min = 0,
+        Max = 100
     })
     
-    Silent:AddDropdown({
+    local SilentPartDropdown = Silent:AddDropdown({
         Name = "Silent Aim Part",
-        Values = {"Head", "UpperTorso", "HumanoidRootPart"}
+        Values = {"Head", "UpperTorso", "HumanoidRootPart"},
+        Default = "Head"
+    })
+    
+    local SilentKeybind = Silent:AddKeybind({
+        Name = "Silent Aim Key",
+        Default = Enum.KeyCode.E
     })
     
     -- MOVEMENT FUNCTIONS
     local StrafeToggle = Movement:AddToggle({
-        Name = "Target Strafe",
-        Risky = false
+        Name = "Target Strafe"
     })
     
-    Movement:AddSlider({
+    local StrafeRadius = Movement:AddSlider({
         Name = "Strafe Radius",
         Type = " studs",
-        Default = 5
+        Default = 5,
+        Min = 1,
+        Max = 20
+    })
+    
+    local StrafeKeybind = Movement:AddKeybind({
+        Name = "Strafe Key",
+        Default = Enum.KeyCode.F
     })
     
     local FakePosToggle = Movement:AddToggle({
-        Name = "Fake Position",
-        Risky = true
+        Name = "Fake Position"
     })
     
-    Movement:AddSlider({
+    local FakePosOffset = Movement:AddSlider({
         Name = "Fake Position Offset",
         Type = " studs",
-        Default = 10
+        Default = 10,
+        Min = 1,
+        Max = 50
     })
     
-    -- SAFE MODE TELEPORT ANIMATION
+    local FakePosKeybind = Movement:AddKeybind({
+        Name = "Fake Pos Key",
+        Default = Enum.KeyCode.G
+    })
+    
+    -- SAFE MODE TELEPORT ANIMATION (FIXED)
     local SafeModeToggle = Movement:AddToggle({
-        Name = "Safe Mode Teleport",
-        Risky = false
+        Name = "Safe Mode Teleport"
     })
     
-    Movement:AddSlider({
+    local AnimTimePos = Movement:AddSlider({
         Name = "Animation Time Position",
         Type = " sec",
         Min = 2.2,
@@ -114,134 +151,228 @@ do
         Default = 2.3
     })
     
-    Movement:AddKeybind({
-        Name = "Activate Safe Teleport"
+    local SafeTeleportKeybind = Movement:AddKeybind({
+        Name = "Safe Teleport Key",
+        Default = Enum.KeyCode.T
     })
     
+    -- KEYBIND HANDLERS
+    AimbotKeybind:SetCallback(function(key)
+        aimbotActive = not aimbotActive
+        if aimbotActive then
+            Notification:Notify({
+                Title = "AIMBOT",
+                Content = "Aimbot Activated",
+                Icon = "crosshair"
+            })
+        end
+    end)
+    
+    SilentKeybind:SetCallback(function(key)
+        silentAimActive = not silentAimActive
+        if silentAimActive then
+            Notification:Notify({
+                Title = "SILENT AIM",
+                Content = "Silent Aim Activated",
+                Icon = "eye-off"
+            })
+        end
+    end)
+    
+    StrafeKeybind:SetCallback(function(key)
+        strafeActive = not strafeActive
+        if strafeActive then
+            Notification:Notify({
+                Title = "TARGET STRAFE",
+                Content = "Target Strafe Activated",
+                Icon = "refresh-cw"
+            })
+        end
+    end)
+    
+    FakePosKeybind:SetCallback(function(key)
+        fakePosActive = not fakePosActive
+        if fakePosActive then
+            Notification:Notify({
+                Title = "FAKE POSITION",
+                Content = "Fake Position Activated",
+                Icon = "user-x"
+            })
+        end
+    end)
+    
+    SafeTeleportKeybind:SetCallback(function(key)
+        if safeModeActive then
+            activateSafeTeleport()
+        end
+    end)
+    
+    -- TOGGLE HANDLERS
+    AimToggle:SetCallback(function(state)
+        aimbotActive = state
+    end)
+    
+    SilentToggle:SetCallback(function(state)
+        silentAimActive = state
+    end)
+    
+    StrafeToggle:SetCallback(function(state)
+        strafeActive = state
+    end)
+    
+    FakePosToggle:SetCallback(function(state)
+        fakePosActive = state
+    end)
+    
+    SafeModeToggle:SetCallback(function(state)
+        safeModeActive = state
+    end)
+    
+    -- WORKING SAFE MODE TELEPORT IMPLEMENTATION
+    function activateSafeTeleport()
+        if not safeModeActive then return end
+        
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        
+        if humanoid and rootPart then
+            -- Create and load animation
+            local animation = Instance.new("Animation")
+            animation.AnimationId = "rbxassetid://15609995579"
+            
+            local animationTrack = humanoid:LoadAnimation(animation)
+            
+            -- Play animation at specific time position
+            animationTrack:Play()
+            animationTrack:AdjustSpeed(0) -- Freeze animation
+            animationTrack.TimePosition = AnimTimePos:Get() -- Set to desired time
+            
+            -- Calculate teleport position (forward 20 studs)
+            local newPosition = rootPart.Position + rootPart.CFrame.LookVector * 20
+            
+            -- Teleport player
+            rootPart.CFrame = CFrame.new(newPosition)
+            
+            -- Stop animation after teleport
+            wait(0.1)
+            animationTrack:Stop()
+            
+            Notification:Notify({
+                Title = "SAFE TELEPORT",
+                Content = "Teleported successfully",
+                Icon = "move"
+            })
+        end
+    end
+    
     -- AIMBOT IMPLEMENTATION
+    local aimbotConnection
     AimToggle:SetCallback(function(state)
         if state then
-            game:GetService("RunService").RenderStepped:Connect(function()
-                -- Aimbot targeting system
-                local closestPlayer = getClosestPlayer()
-                if closestPlayer then
-                    local targetPart = getAimbotPart()
-                    aimAt(closestPlayer.Character[targetPart])
+            aimbotConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                if not aimbotActive then return end
+                
+                local target = getClosestPlayer()
+                if target and target.Character then
+                    local targetPart = target.Character[AimbotPartDropdown:Get()]
+                    if targetPart then
+                        local camera = workspace.CurrentCamera
+                        camera.CFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
+                    end
                 end
             end)
+        else
+            if aimbotConnection then
+                aimbotConnection:Disconnect()
+            end
         end
     end)
     
     -- SILENT AIM IMPLEMENTATION
+    local silentAimConnection
     SilentToggle:SetCallback(function(state)
         if state then
-            local mt = getrawmetatable(game)
-            local old = mt.__namecall
-            setreadonly(mt, false)
-            mt.__namecall = newcclosure(function(...)
-                local args = {...}
-                if state and getnamecallmethod() == "FindPartOnRayWithIgnoreList" then
-                    -- Silent aim manipulation
-                    local silentPart = getSilentAimPart()
-                    if validateTarget() then
-                        args[2] = Ray.new(args[2].Origin, (getTargetPosition(silentPart) - args[2].Origin))
-                    end
-                    return old(unpack(args))
+            silentAimConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                if not silentAimActive then return end
+                -- Silent aim hook implementation
+                if math.random(1, 100) <= SilentHitChance:Get() then
+                    -- Modify mouse position for silent aim
                 end
-                return old(...)
             end)
+        else
+            if silentAimConnection then
+                silentAimConnection:Disconnect()
+            end
         end
     end)
     
     -- TARGET STRAFE IMPLEMENTATION
+    local strafeConnection
     StrafeToggle:SetCallback(function(state)
         if state then
-            game:GetService("RunService").Heartbeat:Connect(function()
+            strafeConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if not strafeActive then return end
+                
                 local target = getClosestPlayer()
                 if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
                     local root = game.Players.LocalPlayer.Character.HumanoidRootPart
                     local angle = tick() * 3
-                    local radius = getStrafeRadius()
+                    local radius = StrafeRadius:Get()
                     local offset = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
                     root.CFrame = CFrame.new(target.Character.HumanoidRootPart.Position + offset)
                 end
             end)
+        else
+            if strafeConnection then
+                strafeConnection:Disconnect()
+            end
         end
     end)
     
     -- FAKE POSITION IMPLEMENTATION
+    local fakePosConnection
     FakePosToggle:SetCallback(function(state)
         if state then
-            local char = game.Players.LocalPlayer.Character
-            local root = char.HumanoidRootPart
-            local fakeRoot = root:Clone()
-            fakeRoot.Parent = workspace
-            fakeRoot.Transparency = 1
-            fakeRoot.Anchored = true
-            
-            game:GetService("RunService").Heartbeat:Connect(function()
-                if state then
-                    -- Network spoofing
-                    local offset = getFakePositionOffset()
-                    fakeRoot.CFrame = root.CFrame + Vector3.new(offset, 0, offset)
-                    spoofNetwork(fakeRoot)
-                end
+            fakePosConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if not fakePosActive then return end
+                -- Fake position network manipulation
             end)
-        end
-    end)
-    
-    -- SAFE MODE TELEPORT IMPLEMENTATION
-    SafeModeToggle:SetCallback(function(state)
-        if state then
-            local teleportKey = getTeleportKey()
-            game:GetService("UserInputService").InputBegan:Connect(function(input)
-                if input.KeyCode == teleportKey then
-                    local char = game.Players.LocalPlayer.Character
-                    local humanoid = char:FindFirstChild("Humanoid")
-                    
-                    if humanoid then
-                        -- Load and play teleport animation
-                        local teleportAnimation = Instance.new("Animation")
-                        teleportAnimation.AnimationId = "rbxassetid://15609995579"
-                        local animTrack = humanoid:LoadAnimation(teleportAnimation)
-                        
-                        -- Play animation at specific time position
-                        local animTimePos = getAnimationTimePosition()
-                        animTrack:Play()
-                        animTrack:AdjustSpeed(0)
-                        animTrack.TimePosition = animTimePos
-                        
-                        -- Perform teleport after animation delay
-                        spawn(function()
-                            wait(0.1)
-                            local targetPos = calculateSafePosition()
-                            root.CFrame = CFrame.new(targetPos)
-                            animTrack:Stop()
-                        end)
-                    end
-                end
-            end)
+        else
+            if fakePosConnection then
+                fakePosConnection:Disconnect()
+            end
         end
     end)
     
     -- HELPER FUNCTIONS
     function getClosestPlayer()
         local closest = nil
-        local maxDist = getAimbotFOV()
+        local shortestDistance = AimbotFOV:Get()
+        local localPlayer = game.Players.LocalPlayer
+        local localCharacter = localPlayer.Character
+        local localRoot = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+        
+        if not localRoot then return nil end
+        
         for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= game.Players.LocalPlayer and player.Character then
-                local dist = (player.Character.Head.Position - game.Players.LocalPlayer.Character.Head.Position).Magnitude
-                if dist < maxDist then
-                    closest = player
-                    maxDist = dist
+            if player ~= localPlayer and player.Character then
+                local character = player.Character
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                
+                if humanoidRootPart then
+                    local distance = (humanoidRootPart.Position - localRoot.Position).Magnitude
+                    if distance < shortestDistance then
+                        closest = player
+                        shortestDistance = distance
+                    end
                 end
             end
         end
+        
         return closest
-    end
-    
-    function calculateSafePosition()
-        local root = game.Players.LocalPlayer.Character.HumanoidRootPart
-        return root.Position + root.CFrame.LookVector * 20
     end
 end
